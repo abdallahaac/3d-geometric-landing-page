@@ -32,3 +32,6 @@ body {
 section:nth-child(odd) {
   justify-content: flex-end;
 }
+div {
+  color: #ffff;
+}

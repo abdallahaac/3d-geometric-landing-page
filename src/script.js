@@ -5,7 +5,9 @@ import * as dat from "lil-gui";
 /**
  * Debug
  */
+
 const gui = new dat.GUI();
+gui.close();
 
 const parameters = {
   materialColor: "#ffeded",
@@ -109,22 +111,27 @@ const octahedron = new THREE.Mesh(octahedronGeometry, octahedronMaterial);
  * Object Position/ Scales
  */
 
+// Object Distance
+const objectsDistance = 2;
 // Sphere
 sphere.scale.set(0.5, 0.5, 0.5);
-sphere.position.y = 0;
 sphere.position.x = 2;
+sphere.position.y = 0 * objectsDistance;
 
 // Torus Position / Scale
 torus.scale.set(0.7, 0.7, 0.7);
 torus.position.x = 2;
+torus.position.y = 0 * objectsDistance;
 
 // Torus Knot Position / Scale
 torusKnot.scale.set(0.4, 0.4, 0.4);
-torusKnot.position.x = -0.4;
+torusKnot.position.x = -2;
+torusKnot.position.y = -2.2 * objectsDistance;
 
 //Octahedron  Position / Scale
 octahedron.scale.set(0.7, 0.7, 0.7);
 octahedron.position.x = -2;
+octahedron.position.y = objectsDistance * -5;
 
 // Adding Objects to Scene
 scene.add(sphere, torus, torusKnot, octahedron);
@@ -158,7 +165,7 @@ mainLight
   .onChange(() => pointLight.color.set(mainLightColor.color));
 
 // Point Light 2
-const pointLight2 = new THREE.PointLight(0x9093bb, 9.75);
+const pointLight2 = new THREE.PointLight(0x782097, 9.75);
 pointLight2.position.set(1.81, -10, 0.83);
 pointLight2.intensity = 10;
 scene.add(pointLight2);
@@ -188,7 +195,6 @@ const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
-
 window.addEventListener("resize", () => {
   // Update sizes
   sizes.width = window.innerWidth;
@@ -206,6 +212,12 @@ window.addEventListener("resize", () => {
 /**
  * Camera
  */
+
+// Camera Group
+
+const cameraGroup = new THREE.Group();
+scene.add(cameraGroup);
+
 // Base camera
 const camera = new THREE.PerspectiveCamera(
   35,
@@ -214,7 +226,7 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.z = 5;
-scene.add(camera);
+cameraGroup.add(camera);
 
 /**
  * Renderer
@@ -226,6 +238,29 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
+ *  Scroll
+ */
+let scrollY = window.scrollY;
+
+window.addEventListener("scroll", () => {
+  scrollY = window.scrollY;
+  console.log(scrollY);
+});
+/**
+ * Cursor
+ */
+
+const cursor = {};
+cursor.x = 0;
+cursor.y = 0;
+
+window.addEventListener("mousemove", (event) => {
+  cursor.x = event.clientX / sizes.width - 0.5;
+  cursor.y = event.clientY / sizes.height - 0.5;
+
+  console.log(cursor);
+});
+/**
  * Animate
  */
 const clock = new THREE.Clock();
@@ -233,10 +268,19 @@ const clock = new THREE.Clock();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
+  // Animate camera
+  camera.position.y = scrollY * -0.01;
+
+  const parallaxX = cursor.x;
+  const parallaxY = -cursor.y;
+
+  cameraGroup.position.x = parallaxX * 0.1;
+  cameraGroup.position.y = parallaxY * 0.1;
+
   // Render
   renderer.render(scene, camera);
   sphere.rotation.y = 0.5 * elapsedTime;
-  torus.rotation.z = -0.5 * elapsedTime;
+  torus.rotation.z = -0.3 * elapsedTime;
   torusKnot.rotation.z = -0.3 * elapsedTime;
   octahedron.rotation.z = -0.2 * elapsedTime;
 
