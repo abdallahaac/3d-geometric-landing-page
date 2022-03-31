@@ -1,7 +1,7 @@
 import "./style.css";
 import * as THREE from "three";
 import * as dat from "lil-gui";
-
+import gsap from "gsap";
 /**
  * Debug
  */
@@ -115,31 +115,60 @@ const octahedron = new THREE.Mesh(octahedronGeometry, octahedronMaterial);
 const objectsDistance = 2;
 // Sphere
 sphere.scale.set(0.5, 0.5, 0.5);
-sphere.position.x = 2;
+sphere.position.x = 1.8;
 sphere.position.y = 0 * objectsDistance;
 
 // Torus Position / Scale
 torus.scale.set(0.7, 0.7, 0.7);
-torus.position.x = 2;
+torus.position.x = 1.8;
 torus.position.y = 0 * objectsDistance;
 
 // Torus Knot Position / Scale
 torusKnot.scale.set(0.4, 0.4, 0.4);
 torusKnot.position.x = -2;
-torusKnot.position.y = -2.2 * objectsDistance;
+torusKnot.position.y = -3 * objectsDistance;
 
 //Octahedron  Position / Scale
-octahedron.scale.set(0.7, 0.7, 0.7);
-octahedron.position.x = -2;
-octahedron.position.y = objectsDistance * -5;
+octahedron.scale.set(0.2, 0.7, 0.7);
+octahedron.position.x = 2;
+octahedron.position.y = objectsDistance * -10;
 
 // Adding Objects to Scene
 scene.add(sphere, torus, torusKnot, octahedron);
-
+// Array of Meshes
+const sectionMeshes = [torus, torusKnot, octahedron];
 // Sphere Material GUI
 const sphereMaterialGUI = gui.addFolder("Sphere Material");
 sphereMaterialGUI.add(sphereMaterial, "metalness").min(0).max(1).step(0.01);
 sphereMaterialGUI.add(sphereMaterial, "roughness").min(0).max(1).step(0.01);
+
+/**
+ * Particles
+ */
+// Geometry
+const particlesCount = 4500;
+const positions = new Float32Array(particlesCount * 3);
+for (let i = 0; i < particlesCount; i++) {
+  positions[i * 3 + 0] = (Math.random() - 0.5) * 20;
+  positions[i * 3 + 1] = objectsDistance - Math.random() * 24;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+}
+const particlesGeometry = new THREE.BufferGeometry();
+particlesGeometry.setAttribute(
+  "position",
+  new THREE.BufferAttribute(positions, 3)
+);
+
+//Particle Material
+const particleMaterial = new THREE.PointsMaterial({
+  color: 0xffffff,
+  sizeAttenuation: true,
+  size: 0.01,
+});
+
+//Points
+const particles = new THREE.Points(particlesGeometry, particleMaterial);
+scene.add(particles);
 
 // Main Point Light 1
 const pointLight = new THREE.PointLight(0xffffff, 10);
@@ -184,9 +213,9 @@ pointLight2GUI.add(pointLight2, "intensity").min(0).max(10).step(0.01);
 const pointLight2Color = {
   color: 0xff00000,
 };
-pointLight2GUI
-  .addColor(pointLight2Color, "color")
-  .onChange(() => pointLight2.color.set(pointLight2Color.color));
+pointLight2GUI.addColor(pointLight2Color, "color").onChange(() => {
+  pointLight2.color.set(pointLight2Color.color);
+});
 
 /**
  * Sizes
@@ -241,10 +270,23 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  *  Scroll
  */
 let scrollY = window.scrollY;
+let currentSection = 0;
 
 window.addEventListener("scroll", () => {
   scrollY = window.scrollY;
-  console.log(scrollY);
+
+  const newSection = Math.round(scrollY / sizes.height);
+  if (newSection != currentSection) {
+    currentSection = newSection;
+
+    gsap.to(sectionMeshes[currentSection].rotation, {
+      duration: 3,
+      ease: "power2.inOut",
+      x: "+=3",
+      y: "+=3",
+    });
+  }
+  console.log(newSection);
 });
 /**
  * Cursor
@@ -264,25 +306,30 @@ window.addEventListener("mousemove", (event) => {
  * Animate
  */
 const clock = new THREE.Clock();
+let previousTime = 0;
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - previousTime;
+  previousTime = elapsedTime;
 
   // Animate camera
   camera.position.y = scrollY * -0.01;
 
-  const parallaxX = cursor.x;
-  const parallaxY = -cursor.y;
+  const parallaxX = cursor.x * 0.3;
+  const parallaxY = -cursor.y * 0.3;
 
-  cameraGroup.position.x = parallaxX * 0.1;
-  cameraGroup.position.y = parallaxY * 0.1;
+  cameraGroup.position.x +=
+    (parallaxX - cameraGroup.position.x) * 5 * deltaTime;
+  cameraGroup.position.y +=
+    (parallaxY - cameraGroup.position.y) * 5 * deltaTime;
 
   // Render
   renderer.render(scene, camera);
-  sphere.rotation.y = 0.5 * elapsedTime;
-  torus.rotation.z = -0.3 * elapsedTime;
-  torusKnot.rotation.z = -0.3 * elapsedTime;
-  octahedron.rotation.z = -0.2 * elapsedTime;
+  sphere.rotation.y += 0.5 * deltaTime;
+  torus.rotation.z += -0.3 * deltaTime;
+  torusKnot.rotation.z += -0.3 * deltaTime;
+  octahedron.rotation.z += -0.2 * deltaTime;
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
