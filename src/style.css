@@ -32,6 +32,26 @@ body {
 section:nth-child(odd) {
   justify-content: flex-end;
 }
-div {
-  color: #ffff;
+
+a {
+  color: white;
+  display: inline-block;
+  text-decoration: none;
+}
+.link {
+}
+.link:hover {
+  transition: border-color 0.9s ease;
+}
+.link::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 3px;
+  background-color: white;
+  transition: width 0.4s;
+}
+.link:hover::after {
+  width: 100%;
+  transition: width 0.4s;
 }
